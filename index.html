@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valentines Date</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:linear-gradient(135deg,#ff9a9e,#fad0c4);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  overflow:hidden;
+}
+
+.container{
+  background:white;
+  width:95%;
+  max-width:420px;
+  border-radius:20px;
+  padding:20px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  position:relative;
+}
+
+.progress{
+  font-size:14px;
+  margin-bottom:8px;
+  color:#ff4e73;
+  font-weight:bold;
+}
+
+button{
+  padding:10px 15px;
+  border:none;
+  border-radius:15px;
+  margin-top:10px;
+  cursor:pointer;
+}
+
+.primary{background:#ff4e73;color:white;}
+.secondary{background:#ffd166;}
+
+.images{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:15px 0;
+  opacity:1;
+  transition:opacity .4s ease;
+}
+
+.images.fade{
+  opacity:0;
+}
+
+.images img{
+  width:100%;
+  height:100px;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+.answer-box{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin:10px 0;
+}
+
+.answer-box div{
+  width:28px;
+  height:40px;
+  border-bottom:2px solid black;
+  margin:4px;
+  font-size:20px;
+  text-transform:uppercase;
+}
+
+.letter-bank{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:6px;
+  margin-top:10px;
+}
+
+.letter{
+  background:#eee;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.letter.yellow{
+  background:#ffd166;
+}
+
+.zoom{
+  animation:zoom .4s ease;
+}
+
+@keyframes zoom{
+  from{transform:scale(.9);}
+  to{transform:scale(1);}
+}
+
+/* Popup */
+.popup{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.5);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.popup-box{
+  background:white;
+  padding:25px;
+  border-radius:20px;
+  text-align:center;
+  animation:zoom .3s ease;
+}
+
+.popup-box button{
+  margin:5px;
+  padding:8px 15px;
+  border:none;
+  border-radius:12px;
+  background:#ff4e73;
+  color:white;
+  cursor:pointer;
+}
+
+/* Heart Confetti */
+.heart{
+  position:fixed;
+  font-size:20px;
+  animation:fall 2s linear forwards;
+}
+
+@keyframes fall{
+  from{transform:translateY(-50px);opacity:1;}
+  to{transform:translateY(100vh);opacity:0;}
+}
+
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="container zoom">
+
+<div id="intro">
+  <h2>Love</h2>
+  <p>You were asking me yesterday what time our date will be</p>
+  <button class="primary" onclick="revealTime()">Reveal Time</button>
+</div>
+
+<div id="game" class="hidden">
+  <div class="progress" id="progressText"></div>
+  <div id="stageHeader"></div>
+  <div class="images" id="images"></div>
+  <div class="answer-box" id="answerBox"></div>
+  <div class="letter-bank" id="letters"></div>
+
+  <button class="primary" onclick="submitAnswer()">Submit</button>
+  <button class="secondary" onclick="showHint()">Hint</button>
+  <button class="secondary" onclick="backspace()">⌫</button>
+</div>
+
+</div>
+
+<script>
+
+const stages=[
+{
+word:"GREENBELT",
+successTitle:"WE ARE GOING TO GREENBELT MAHAL KOOOO!",
+successText:"I LOVE YOUUUUUUU!",
+images:[
+"Greenbelt.jpg",
+"Greenbelt3.jpg",
+"Greenbelt2.jpg",
+"Greenbelt2.jpeg"
+]
+},
+{
+word:"HOTCHOCO",
+successTitle:"HOT/ICE CHOCO WITH YOU?",
+successText:"DI KO MUNA SPOIL SAAN PERO SANA MAGUSTUHAN MO ASDFASCASC",
+images:[
+"hotchoco.webp",
+"hotchoco1.webp",
+"hotchoco2.jpeg",
+"hotchoco4.jpeg"
+]
+},
+{
+word:"WALK",
+successTitle:"GALA TOIMEEE HANAP TAYO PLACES FOR INSTAX",
+successText:"READY KA MAGIKOT LOVE?",
+images:[
+"wok.webp",
+"wok1.webp",
+"wok2.webp",
+"wok3.jpeg"
+]
+},
+{
+word:"CHURCH",
+successTitle:"CHURCH TAYO SABAY HEHE",
+successText:"SANA GETS MO CONTEXT BAT YUN CLUES HAHAHAHHA",
+images:[
+"church.jpg",
+"church1.webp",
+"church2.jpg",
+"church3.jpg"
+]
+},
+{
+word:"SUSHI",
+successTitle:"RAW IS ALWAYS BETTER?",
+successText:"NEW RESTAURANT WITH THE LOVE OF MY LIFE",
+images:[
+"sushi.png",
+"sushi1.jpg",
+"sushi2.png",
+"sushi3.jpeg"
+]
+},
+{
+word:"COFFEE",
+successTitle:"COFFEE/MATCHA BAGO UWIII",
+successText:"AYALA TRIANGLE TAYOOOOO",
+images:[
+"coffee.jpeg",
+"coffee1.jpg",
+"coffee2.webp",
+"coffee.png"
+]
+}
+];
+
+let currentStage=0;
+let currentInput="";
+let selectedLetters=[];
+
+function revealTime(){
+
+  const popup = document.createElement("div");
+  popup.className = "popup";
+  popup.innerHTML = `
+    <div class="popup-box">
+      <h3>I’ll pick you up at</h3>
+      <h2 style="color:#ff4e73;">12:30 PM</h2>
+      <p>Our first destination will be?</p>
+      <button onclick="startGame()">Continue 💖</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+}
+
+
+function loadStage(){
+currentInput="";
+selectedLetters=[];
+const stage=stages[currentStage];
+document.getElementById("progressText").innerText=`${currentStage+1}/${stages.length}`;
+const answerBox=document.getElementById("answerBox");
+const lettersDiv=document.getElementById("letters");
+const imageContainer=document.getElementById("images");
+const header=document.getElementById("stageHeader");
+
+answerBox.innerHTML="";
+lettersDiv.innerHTML="";
+header.innerHTML="";
+imageContainer.classList.add("fade");
+
+setTimeout(()=>{
+imageContainer.innerHTML="";
+stage.images.forEach(src=>{
+const img=document.createElement("img");
+img.src=src;
+imageContainer.appendChild(img);
+});
+imageContainer.classList.remove("fade");
+},300);
+
+
+
+for(let i=0;i<stage.word.length;i++){
+const d=document.createElement("div");
+d.id="box"+i;
+answerBox.appendChild(d);
+}
+
+const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let pool=stage.word;
+while(pool.length<14){
+pool+=alphabet[Math.floor(Math.random()*alphabet.length)];
+}
+shuffle(pool).split("").forEach(letter=>{
+const l=document.createElement("div");
+l.classList.add("letter");
+l.innerText=letter;
+l.onclick=()=>selectLetter(letter,l);
+lettersDiv.appendChild(l);
+});
+}
+function startGame(){
+  closePopup();
+
+  document.getElementById("intro").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+
+  loadStage();
+}
+
+function selectLetter(letter,el){
+if(currentInput.length<stages[currentStage].word.length){
+document.getElementById("box"+currentInput.length).innerText=letter;
+currentInput+=letter;
+selectedLetters.push(el);
+el.style.visibility="hidden";
+}
+}
+
+function backspace(){
+if(currentInput.length>0){
+currentInput=currentInput.slice(0,-1);
+document.getElementById("box"+currentInput.length).innerText="";
+const last=selectedLetters.pop();
+if(last) last.style.visibility="visible";
+}
+}
+
+function submitAnswer(){
+
+  const correctWord = stages[currentStage].word;
+
+  if(currentInput.length !== correctWord.length){
+    showPopup("FILL ALL THE LETTERS MAHAL KOO LIKE HOW I FILL YOU UP HAHAHAHHA");
+    return;
+  }
+
+  if(currentInput !== correctWord){
+    showPopup("MALIIIII TRY AGAIN LOVE");
+    return;
+  }
+
+  celebrate();
+}
+
+function celebrate(){
+
+  const stage = stages[currentStage];
+  const nextStage = currentStage + 1;
+
+  let nextText = "";
+  if(nextStage < stages.length){
+    nextText = `WHATS NEXT? 👀`;
+  } else {
+    nextText = "NA UNLOCK MO NA BUONG DATE KALIII CONGRATS IM PROUD OF YOU 💕";
+  }
+
+  // Heart Confetti
+  for(let i=0;i<20;i++){
+    const heart=document.createElement("div");
+    heart.className="heart";
+    heart.innerText="💖";
+    heart.style.left=Math.random()*100+"%";
+    document.body.appendChild(heart);
+    setTimeout(()=>heart.remove(),2000);
+  }
+
+  // Success Popup (Dynamic)
+  const popup=document.createElement("div");
+  popup.className="popup";
+  popup.innerHTML=`
+    <div class="popup-box">
+      <h3>${stage.successTitle}</h3>
+      <p>${stage.successText}</p>
+      <p style="margin-top:8px;">${nextText}</p>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  document.querySelector(".container").classList.add("zoom");
+
+  setTimeout(()=>{
+    popup.remove();
+    document.querySelector(".container").classList.remove("zoom");
+
+    currentStage++;
+    if(currentStage < stages.length){
+      loadStage();
+    } else {
+      document.getElementById("game").innerHTML=`
+        <h2>THANK YOU FOR SAYING YES TO OUR VALENTINES DATE 💌</h2>
+        <p>
+        I LOVE YOU SO MUCH AND I CANT IMAGINE MY LIFE WITHOUT YOU 💕<br><br>
+        I HOPE YOU ENJOY OUR DATE TOMORROW<br><br>
+        IM EXCITED TO SEE YOU KALIII I LOVE YOUUUUU
+        </p>
+      `;
+    }
+
+  },2200);
+}
+function showPopup(message){
+
+  const popup = document.createElement("div");
+  popup.className = "popup";
+  popup.innerHTML = `
+    <div class="popup-box">
+      <p>${message}</p>
+      <button onclick="closePopup()">Okay 💕</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+}
+function closePopup(){
+  const popup = document.querySelector(".popup");
+  if(popup) popup.remove();
+}
+
+
+function showHint(){
+const answer=stages[currentStage].word;
+document.querySelectorAll(".letter").forEach(l=>{
+if(answer.includes(l.innerText)){
+l.classList.add("yellow");
+}
+});
+}
+
+function shuffle(str){
+return str.split('').sort(()=>Math.random()-0.5).join('');
+}
+
+</script>
+
+</body>
+</html>
